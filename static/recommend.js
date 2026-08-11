@@ -34,7 +34,7 @@ function load_details(title){
     type: 'GET',
     url: '/api/search_movie?title=' + encodeURIComponent(title),
     success: function(movie){
-      if(movie.results.length<1){
+      if(!movie.results || movie.results.length < 1){
         $('.fail').css('display','block');
         $('.fail').text('Sorry! The movie you requested is not in our database. Please check the spelling or try with other movies!');
         $("#loader").delay(500).fadeOut();
@@ -49,7 +49,7 @@ function load_details(title){
       }
     },
     error: function(){
-      alert('Error searching movie details through proxy');
+      alert('Error searching movie details');
       $("#loader").delay(500).fadeOut();
     }
   });
@@ -100,7 +100,7 @@ function get_movie_details(movie_id, arr, movie_title) {
 
 function show_details(movie_details, arr, movie_title, movie_id){
   var imdb_id = movie_details.imdb_id;
-  var poster = 'https://image.tmdb.org/t/p/original'+movie_details.poster_path;
+  var poster = movie_details.poster_path ? 'https://image.tmdb.org/t/p/original' + movie_details.poster_path : '/static/movie_placeholder.jpeg';
   var overview = movie_details.overview;
   var genres = movie_details.genres;
   var rating = movie_details.vote_average;
@@ -120,7 +120,6 @@ function show_details(movie_details, arr, movie_title, movie_id){
     runtime = Math.floor(runtime/60)+" hour(s) "+(runtime%60)+" min(s)"
   }
 
-  // Get cast details
   var top_casts = [];
   var top_cast_ids = [];
   var cast_names = [];
@@ -131,11 +130,12 @@ function show_details(movie_details, arr, movie_title, movie_id){
     type:'GET',
     url:'/api/movie_credits/' + movie_id,
     success: function(my_movie_cast){
-      if(my_movie_cast.cast.length >= 8){
+      if(my_movie_cast.cast && my_movie_cast.cast.length >= 8){
         top_casts = my_movie_cast.cast.slice(0, 8);
-      } else {
+      } else if (my_movie_cast.cast) {
         top_casts = my_movie_cast.cast;
       }
+      
       for(var i=0; i<top_casts.length; i++){
         top_cast_ids.push(top_casts[i].id);
         cast_names.push(top_casts[i].name);
@@ -143,7 +143,6 @@ function show_details(movie_details, arr, movie_title, movie_id){
         cast_profiles.push(top_casts[i].profile_path ? "https://image.tmdb.org/t/p/original" + top_casts[i].profile_path : "/static/default.jpg");
       }
 
-      // Fetch cast bio details
       var cast_bdys = [];
       var cast_bios = [];
       var cast_places = [];
@@ -158,9 +157,9 @@ function show_details(movie_details, arr, movie_title, movie_id){
           type:'GET',
           url:'/api/person/' + cast_id,
           success: function(person){
-            cast_bdys[idx] = new Date(person.birthday).toDateString().split(' ').slice(1).join(' ');
-            cast_bios[idx] = person.biography;
-            cast_places[idx] = person.place_of_birth;
+            cast_bdys[idx] = person.birthday ? new Date(person.birthday).toDateString().split(' ').slice(1).join(' ') : "N/A";
+            cast_bios[idx] = person.biography ? person.biography : "N/A";
+            cast_places[idx] = person.place_of_birth ? person.place_of_birth : "N/A";
             completed_requests++;
             if(completed_requests === top_cast_ids.length){
               get_posters_and_render();
@@ -181,6 +180,11 @@ function show_details(movie_details, arr, movie_title, movie_id){
       function get_posters_and_render(){
         var movie_posters = [];
         var poster_requests = 0;
+
+        if(arr.length === 0){
+          send_recommend_request();
+          return;
+        }
 
         arr.forEach(function(m_title, idx){
           $.ajax({
@@ -223,7 +227,7 @@ function show_details(movie_details, arr, movie_title, movie_id){
           'genres': my_genre,
           'overview': overview,
           'rating': rating,
-          'vote_count': vote_count.toLocaleString(),
+          'vote_count': (vote_count || 0).toLocaleString(),
           'release_date': release_date,
           'runtime': runtime,
           'status': status,
