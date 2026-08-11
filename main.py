@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore")
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -14,7 +17,7 @@ def load_nlp():
     vectorizer = pickle.load(open('tranform.pkl', 'rb'))
     return clf, vectorizer
 
-# 2. Load dataset and count matrix ONLY (lightweight & instant)
+# 2. Load dataset and count matrix ONLY
 @st.cache_data
 def load_data_and_vectorizer():
     data = pd.read_csv('main_data.csv')
@@ -25,18 +28,17 @@ def load_data_and_vectorizer():
 clf, vectorizer = load_nlp()
 data, count_matrix = load_data_and_vectorizer()
 
-# On-demand recommendation calculation (uses <50MB RAM)
+# On-demand recommendation calculation
 def rcmd(m):
     m = m.lower()
     if m not in data['movie_title'].unique():
         return None
     idx = data.loc[data['movie_title'] == m].index[0]
     
-    # Calculate similarity for ONLY the chosen movie against all others
     sim_scores = cosine_similarity(count_matrix[idx], count_matrix).flatten()
     lst = list(enumerate(sim_scores))
     lst = sorted(lst, key=lambda x: x[1], reverse=True)
-    lst = lst[1:11] # Top 10 similar movies
+    lst = lst[1:11]
     
     return [data['movie_title'][item[0]].capitalize() for item in lst]
 
