@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
-import requests
-from bs4 import BeautifulSoup
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -16,26 +14,30 @@ def load_nlp():
     vectorizer = pickle.load(open('tranform.pkl', 'rb'))
     return clf, vectorizer
 
-# 2. Load dataset and compute similarity matrix
+# 2. Load dataset and count matrix ONLY (lightweight & instant)
 @st.cache_data
-def load_data_and_similarity():
+def load_data_and_vectorizer():
     data = pd.read_csv('main_data.csv')
     cv = CountVectorizer()
     count_matrix = cv.fit_transform(data['comb'])
-    similarity = cosine_similarity(count_matrix)
-    return data, similarity
+    return data, count_matrix
 
 clf, vectorizer = load_nlp()
-data, similarity = load_data_and_similarity()
+data, count_matrix = load_data_and_vectorizer()
 
+# On-demand recommendation calculation (uses <50MB RAM)
 def rcmd(m):
     m = m.lower()
     if m not in data['movie_title'].unique():
         return None
-    i = data.loc[data['movie_title'] == m].index[0]
-    lst = list(enumerate(similarity[i]))
+    idx = data.loc[data['movie_title'] == m].index[0]
+    
+    # Calculate similarity for ONLY the chosen movie against all others
+    sim_scores = cosine_similarity(count_matrix[idx], count_matrix).flatten()
+    lst = list(enumerate(sim_scores))
     lst = sorted(lst, key=lambda x: x[1], reverse=True)
     lst = lst[1:11] # Top 10 similar movies
+    
     return [data['movie_title'][item[0]].capitalize() for item in lst]
 
 # UI Layout
@@ -48,19 +50,20 @@ selected_movie = st.selectbox(
 )
 
 if st.button("Get Recommendations"):
-    recommendations = rcmd(selected_movie)
-    if recommendations:
-        st.subheader(f"Top 10 Recommendations for '{selected_movie}':")
-        cols = st.columns(5)
-        for idx, rec in enumerate(recommendations[:5]):
-            with cols[idx]:
-                st.info(rec)
-        cols_bottom = st.columns(5)
-        for idx, rec in enumerate(recommendations[5:]):
-            with cols_bottom[idx]:
-                st.info(rec)
-    else:
-        st.warning("Sorry! Movie details not found in database.")
+    with st.spinner("Finding recommendations..."):
+        recommendations = rcmd(selected_movie)
+        if recommendations:
+            st.subheader(f"Top 10 Recommendations for '{selected_movie}':")
+            cols = st.columns(5)
+            for idx, rec in enumerate(recommendations[:5]):
+                with cols[idx]:
+                    st.info(rec)
+            cols_bottom = st.columns(5)
+            for idx, rec in enumerate(recommendations[5:]):
+                with cols_bottom[idx]:
+                    st.info(rec)
+        else:
+            st.warning("Sorry! Movie details not found in database.")
 
 st.markdown("---")
 st.subheader("📝 Analyze a Movie Review (NLP Sentiment Analysis)")
