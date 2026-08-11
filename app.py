@@ -15,7 +15,7 @@ clf = pickle.load(open(filename, 'rb'))
 vectorizer = pickle.load(open('tranform.pkl', 'rb'))
 
 # TMDB API Key for Backend Proxying
-TMDB_API_KEY = "YOUR_TMDB_API_KEY_HERE"  # <-- Paste your 32-character TMDB API Key here
+TMDB_API_KEY = "1e9a8541b13e1d9dff9ac2bda6d982e5"  # <-- Paste your 32-character TMDB API Key here
 
 def create_similarity():
     data = pd.read_csv('main_data.csv')
