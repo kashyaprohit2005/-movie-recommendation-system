@@ -24,21 +24,6 @@
   </script>
 
   <style>
-    /* Added a nice loading spinner animation */
-    #loader {
-      display: none;
-      border: 6px solid #f3f3f3;
-      border-top: 6px solid #e50914; /* Netflix Red */
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-      margin: 30px auto;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
     .footer {
       text-align: center;
       padding: 20px;
@@ -75,8 +60,14 @@
     </div>
   </div>
 
-  <!-- This is the new animated loader -->
-  <div id="loader"></div>
+  <!-- Loading overlay -->
+  <div id="loader" class="loading-overlay" aria-hidden="true">
+    <div class="loading-card">
+      <div class="loading-spinner"></div>
+      <p class="loading-title">Finding your movie</p>
+      <p class="loading-subtitle">Fetching details, reviews & recommendations...</p>
+    </div>
+  </div>
   
   <div class="fail" style="display: none;">
     <center><h3>Sorry! The movie you requested is not in our database. <br> Please check the spelling or try with other movies!</h3></center>

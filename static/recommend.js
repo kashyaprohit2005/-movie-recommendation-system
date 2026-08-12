@@ -22,10 +22,21 @@ $(function() {
   });
 });
 
+function setLoading(isLoading) {
+  var loader = $("#loader");
+  if (isLoading) {
+    loader.css("display", "flex").attr("aria-hidden", "false");
+  } else {
+    loader.fadeOut(200, function() {
+      loader.css("display", "none").attr("aria-hidden", "true");
+    });
+  }
+}
+
 function load_recommendations(title) {
   $('.results').css('display', 'none');
   $('.fail').css('display', 'none');
-  $("#loader").fadeIn(200);
+  setLoading(true);
 
   $.ajax({
     type: 'POST',
@@ -33,7 +44,7 @@ function load_recommendations(title) {
     data: { 'name': title },
     dataType: 'json',
     success: function(response) {
-      $("#loader").fadeOut(200);
+      setLoading(false);
       if (response.status === 'success') {
         $('.results').html(response.html).fadeIn(400);
         $('#autoComplete').val('');
@@ -43,7 +54,7 @@ function load_recommendations(title) {
       }
     },
     error: function(xhr) {
-      $("#loader").fadeOut(200);
+      setLoading(false);
       var err_msg = 'Sorry! The movie you requested is not in our database. Please check the spelling or try another movie.';
       if (xhr.responseJSON && xhr.responseJSON.message) {
         err_msg = xhr.responseJSON.message;
