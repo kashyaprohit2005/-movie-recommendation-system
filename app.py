@@ -85,11 +85,14 @@ def fetch_person_bio(cast_id):
 
 app = Flask(__name__)
 
+# --- DEVELOPER INFO ---
+DEV_INFO = "Developed by Rohit, BCA DS, 241539"
+
 @app.route("/")
 @app.route("/home")
 def home():
     suggestions = get_suggestions()
-    return render_template('home.html', suggestions=suggestions)
+    return render_template('home.html', suggestions=suggestions, developer_info=DEV_INFO)
 
 @app.route("/get_all_movie_data", methods=["POST"])
 def get_all_movie_data():
@@ -184,22 +187,31 @@ def get_all_movie_data():
     casts = {cast_names[i]: [cast_ids[i], cast_chars[i], cast_profiles[i]] for i in range(len(cast_profiles))}
     cast_details = {cast_names[i]: [cast_ids[i], cast_profiles[i], cast_bdys[i], cast_places[i], cast_bios[i]] for i in range(len(cast_places))}
 
-    # 4. IMDb Reviews Extraction
+    # 4. IMDb Reviews Extraction (Updated for better scraping)
     reviews_list = []
     reviews_status = []
     if imdb_id and imdb_id != 'N/A':
         try:
-            imdb_resp = requests.get(f'https://www.imdb.com/title/{imdb_id}/reviews?ref_=tt_ov_rt', headers=headers, timeout=2)
+            imdb_headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9'
+            }
+            imdb_resp = requests.get(f'https://www.imdb.com/title/{imdb_id}/reviews?ref_=tt_ov_rt', headers=imdb_headers, timeout=5)
+            
             if imdb_resp.status_code == 200:
                 soup = bs.BeautifulSoup(imdb_resp.text, 'lxml')
-                soup_result = soup.find_all("div", {"class": "text show-more__control"})
+                # Look for multiple possible class names since IMDb changes them often
+                soup_result = soup.find_all("div", class_=["text show-more__control", "ipc-html-content-inner-div"])
+                
                 for review in soup_result[:8]:
-                    if review.string:
-                        reviews_list.append(review.string)
-                        vector = vectorizer.transform(np.array([review.string]))
+                    if review.text:
+                        review_text = review.text.strip()
+                        reviews_list.append(review_text)
+                        vector = vectorizer.transform(np.array([review_text]))
                         pred = clf.predict(vector)
                         reviews_status.append('Good' if pred[0] == 1 else 'Bad')
-        except Exception:
+        except Exception as e:
+            print(f"IMDb Scraping Error: {e}")
             pass
 
     movie_reviews = {reviews_list[i]: reviews_status[i] for i in range(len(reviews_list))}
@@ -208,7 +220,8 @@ def get_all_movie_data():
     rendered_html = render_template('recommend.html', title=original_title, poster=poster, overview=overview,
                                     vote_average=rating, vote_count=vote_count, release_date=release_date,
                                     runtime=runtime, status=status, genres=genres, movie_cards=movie_cards,
-                                    reviews=movie_reviews, casts=casts, cast_details=cast_details)
+                                    reviews=movie_reviews, casts=casts, cast_details=cast_details,
+                                    developer_info=DEV_INFO)
 
     return jsonify({'status': 'success', 'html': rendered_html})
 
