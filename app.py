@@ -13,13 +13,34 @@ import bs4 as bs
 import pickle
 import requests
 
-# Load Sentiment Analysis Model & Vectorizer
-filename = 'nlp_model.pkl'
-clf = pickle.load(open(filename, 'rb'))
-vectorizer = pickle.load(open('tranform.pkl', 'rb'))
+# Load Sentiment Analysis Model & Vectorizer (lazy, with fallback training)
+SENTIMENT_MODEL = None
+SENTIMENT_VECTORIZER = None
 
-# Active TMDB API Key
-TMDB_API_KEY = "1e9a8541b13e1d9dff9ac2bda6d982e5"
+def load_sentiment_models():
+    global SENTIMENT_MODEL, SENTIMENT_VECTORIZER
+    if SENTIMENT_MODEL is not None and SENTIMENT_VECTORIZER is not None:
+        return SENTIMENT_MODEL, SENTIMENT_VECTORIZER
+
+    model_path = 'nlp_model.pkl'
+    vectorizer_path = 'tranform.pkl'
+    try:
+        SENTIMENT_MODEL = pickle.load(open(model_path, 'rb'))
+        SENTIMENT_VECTORIZER = pickle.load(open(vectorizer_path, 'rb'))
+    except Exception as exc:
+        print(f"Sentiment model load failed ({exc}). Retraining sentiment model...")
+        from train_sentiment import train_and_save
+        SENTIMENT_MODEL, SENTIMENT_VECTORIZER = train_and_save()
+    return SENTIMENT_MODEL, SENTIMENT_VECTORIZER
+
+def analyze_sentiment(review_text):
+    clf, vectorizer = load_sentiment_models()
+    vector = vectorizer.transform(np.array([review_text]))
+    pred = clf.predict(vector)
+    return 'Good' if pred[0] == 1 else 'Bad'
+
+# TMDB API Key (set TMDB_API_KEY in Render environment variables)
+TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "1e9a8541b13e1d9dff9ac2bda6d982e5")
 
 DATA = None
 COUNT_MATRIX = None
@@ -82,6 +103,72 @@ def fetch_person_bio(cast_id):
         }
     except Exception:
         return {'bdy': 'N/A', 'bio': 'N/A', 'place': 'N/A'}
+
+def fetch_tmdb_reviews(movie_id, limit=8):
+    """Fetch user reviews from TMDB API (reliable on cloud hosts)."""
+    reviews = []
+    try:
+        url = f"https://api.themoviedb.org/3/movie/{movie_id}/reviews"
+        resp = requests.get(url, params={'api_key': TMDB_API_KEY}, timeout=5).json()
+        for item in resp.get('results', [])[:limit]:
+            content = (item.get('content') or '').strip()
+            if content:
+                author = item.get('author', 'Anonymous')
+                reviews.append(f"{content}\n— {author}")
+    except Exception as exc:
+        print(f"TMDB Reviews Error: {exc}")
+    return reviews
+
+def fetch_imdb_reviews(imdb_id, limit=8):
+    """Fallback: scrape IMDb reviews when TMDB has none."""
+    reviews = []
+    if not imdb_id or imdb_id == 'N/A':
+        return reviews
+    try:
+        imdb_headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        }
+        imdb_resp = requests.get(
+            f'https://www.imdb.com/title/{imdb_id}/reviews',
+            headers=imdb_headers,
+            timeout=8,
+        )
+        if imdb_resp.status_code != 200:
+            return reviews
+
+        soup = bs.BeautifulSoup(imdb_resp.text, 'lxml')
+        selectors = [
+            'div[data-testid="review-text"]',
+            'div.ipc-html-content-inner-div',
+            'div.text.show-more__control',
+        ]
+        for selector in selectors:
+            for node in soup.select(selector):
+                text = node.get_text(strip=True)
+                if text and len(text) > 20:
+                    reviews.append(text)
+                if len(reviews) >= limit:
+                    return reviews[:limit]
+    except Exception as exc:
+        print(f"IMDb Scraping Error: {exc}")
+    return reviews[:limit]
+
+def get_reviews_with_sentiment(movie_id, imdb_id):
+    """Fetch reviews and run sentiment analysis on each."""
+    reviews_list = fetch_tmdb_reviews(movie_id)
+    if not reviews_list:
+        reviews_list = fetch_imdb_reviews(imdb_id)
+
+    movie_reviews = {}
+    for review_text in reviews_list:
+        try:
+            movie_reviews[review_text] = analyze_sentiment(review_text)
+        except Exception as exc:
+            print(f"Sentiment analysis error: {exc}")
+            movie_reviews[review_text] = 'Unknown'
+    return movie_reviews
 
 app = Flask(__name__)
 
@@ -187,34 +274,8 @@ def get_all_movie_data():
     casts = {cast_names[i]: [cast_ids[i], cast_chars[i], cast_profiles[i]] for i in range(len(cast_profiles))}
     cast_details = {cast_names[i]: [cast_ids[i], cast_profiles[i], cast_bdys[i], cast_places[i], cast_bios[i]] for i in range(len(cast_places))}
 
-    # 4. IMDb Reviews Extraction (Updated for better scraping)
-    reviews_list = []
-    reviews_status = []
-    if imdb_id and imdb_id != 'N/A':
-        try:
-            imdb_headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
-                'Accept-Language': 'en-US,en;q=0.9'
-            }
-            imdb_resp = requests.get(f'https://www.imdb.com/title/{imdb_id}/reviews?ref_=tt_ov_rt', headers=imdb_headers, timeout=5)
-            
-            if imdb_resp.status_code == 200:
-                soup = bs.BeautifulSoup(imdb_resp.text, 'lxml')
-                # Look for multiple possible class names since IMDb changes them often
-                soup_result = soup.find_all("div", class_=["text show-more__control", "ipc-html-content-inner-div"])
-                
-                for review in soup_result[:8]:
-                    if review.text:
-                        review_text = review.text.strip()
-                        reviews_list.append(review_text)
-                        vector = vectorizer.transform(np.array([review_text]))
-                        pred = clf.predict(vector)
-                        reviews_status.append('Good' if pred[0] == 1 else 'Bad')
-        except Exception as e:
-            print(f"IMDb Scraping Error: {e}")
-            pass
-
-    movie_reviews = {reviews_list[i]: reviews_status[i] for i in range(len(reviews_list))}
+    # 4. Fetch reviews and run sentiment analysis
+    movie_reviews = get_reviews_with_sentiment(movie_id, imdb_id)
 
     # 5. Render HTML Output
     rendered_html = render_template('recommend.html', title=original_title, poster=poster, overview=overview,

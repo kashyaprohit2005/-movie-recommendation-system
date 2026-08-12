@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: movie-recommendation-system
+    runtime: python
+    buildCommand: pip install -r requirements.txt && python train_sentiment.py
+    startCommand: gunicorn app:app
+    envVars:
+      - key: TMDB_API_KEY
+        sync: false
