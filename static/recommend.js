@@ -52,3 +52,17 @@ function load_recommendations(title) {
     }
   });
 }
+
+// --- NEW FUNCTION: Makes recommended movie cards clickable ---
+function recommendcard(e) {
+  // Grab the movie title from the 'title' attribute of the clicked card
+  var title = e.getAttribute('title');
+  
+  if (title) {
+    // Fill the search box with the new title
+    $('#autoComplete').val(title);
+    
+    // Call the recommendation API directly with the new title
+    load_recommendations(title);
+  }
+}
