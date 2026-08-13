@@ -117,7 +117,7 @@
         <h6 id="status" style="color:white;">STATUS: &nbsp;{{status}}</h6>
         
         <!-- NEW WATCH TRAILER BUTTON -->
-        <button class="watch-trailer-btn" data-movie-id="{{ movie_id }}">
+        <button type="button" class="watch-trailer-btn" data-movie-id="{{ movie_id }}">
             <i class="fa fa-play"></i> Watch Trailer
         </button>
 
@@ -268,78 +268,5 @@
   <script type="text/javascript" src="{{url_for('static', filename='recommend.js')}}"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-
-  <!-- TRAILER JAVASCRIPT LOGIC -->
-  <script>
-      document.addEventListener('DOMContentLoaded', () => {
-          const modal = document.getElementById('trailerModal');
-          const iframe = document.getElementById('trailerIframe');
-          const titleEl = document.getElementById('trailerTitle');
-          const loader = document.getElementById('trailerLoader');
-          const errorMsg = document.getElementById('trailerError');
-          const closeBtn = document.getElementById('closeTrailer');
-  
-          // Listen for trailer button clicks
-          document.body.addEventListener('click', async (e) => {
-              const btn = e.target.closest('.watch-trailer-btn');
-              if (!btn) return;
-  
-              const movieId = btn.getAttribute('data-movie-id');
-              if (!movieId) return;
-  
-              e.preventDefault();
-  
-              // 1. Reset and Show Modal
-              iframe.style.display = 'none';
-              iframe.src = '';
-              errorMsg.style.display = 'none';
-              loader.style.display = 'block';
-              titleEl.textContent = 'Fetching Trailer...';
-              modal.classList.add('active');
-  
-              // 2. Fetch Data from your new Flask API endpoint
-              try {
-                  const response = await fetch(`/api/trailer/${movieId}`);
-                  const data = await response.json();
-  
-                  loader.style.display = 'none';
-  
-                  if (data.success) {
-                      titleEl.textContent = data.title;
-                      // Autoplay enabled
-                      iframe.src = `https://www.youtube.com/embed/${data.youtube_key}?autoplay=1`;
-                      iframe.style.display = 'block';
-                  } else {
-                      titleEl.textContent = 'Trailer Unavailable';
-                      errorMsg.textContent = data.message || 'We could not find a trailer for this movie.';
-                      errorMsg.style.display = 'block';
-                  }
-              } catch (error) {
-                  loader.style.display = 'none';
-                  titleEl.textContent = 'Connection Error';
-                  errorMsg.textContent = 'Failed to load trailer. Please try again later.';
-                  errorMsg.style.display = 'block';
-              }
-          });
-  
-          // Logic to stop video and close modal
-          function closeTrailerModal() {
-              modal.classList.remove('active');
-              iframe.src = ''; // Kills the video/audio immediately
-          }
-  
-          closeBtn.addEventListener('click', closeTrailerModal);
-  
-          modal.addEventListener('click', (e) => {
-              if (e.target === modal) { closeTrailerModal(); }
-          });
-  
-          document.addEventListener('keydown', (e) => {
-              if (e.key === 'Escape' && modal.classList.contains('active')) {
-                  closeTrailerModal();
-              }
-          });
-      });
-  </script>
 </body>
 </html>
