@@ -25,7 +25,7 @@ $(function() {
   // --- NEW TRAILER LOGIC ---
   // ==========================================
   
-  // 1. Listen for clicks on the trailer button (works on injected HTML)
+  // 1. Listen for clicks on the trailer button 
   $(document).on('click', '.watch-trailer-btn', async function(e) {
     e.preventDefault();
     e.stopPropagation();
