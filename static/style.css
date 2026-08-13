@@ -59,15 +59,40 @@
   	min-height: 100%;
 }
 
+/* --- PROFESSIONAL FOOTER --- */
 .footer {
-	color: #e4e0e0;
-	background-color: #e50914d1;
-	text-align:center;
-	position: fixed;
-	bottom: 0;
- 	width: 100%;
+    color: #a0a0a0;
+    background-color: #111111; /* Dark sleek gray instead of bright red */
+    text-align: center;
+    padding: 20px 0;
+    width: 100%;
+    border-top: 1px solid #333;
+    
+    /* Using relative instead of fixed pushes it to the very bottom, 
+       so it never overlaps your movie cards again! */
+    position: relative; 
+    clear: both;
 }
 
+.footer p {
+    margin: 0;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.github-link {
+    color: #e50914; /* Your theme's red */
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-block;
+    margin-top: 8px;
+    transition: color 0.2s ease;
+}
+
+.github-link:hover {
+    color: #ffffff;
+    text-decoration: none;
+}
 .social-icons {
 	margin-left: 15px;
 }
