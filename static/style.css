@@ -1,332 +1,35 @@
-/* width */
-::-webkit-scrollbar {
-  width: 15px;
-}
-
-/* Track */
-::-webkit-scrollbar-track {
-  border-radius: 10px;
-}
- 
-/* Handle */
-::-webkit-scrollbar-thumb {
-  background: #e50914; 
-  border-radius: 10px;
-}
-
-/* Handle on hover */
-::-webkit-scrollbar-thumb:hover {
-  background: #b30000; 
-}
-
-.movie {
-	color: #fff;
-	margin-left: auto;
-	margin-right: auto;
-	resize: none;
-}
-
-.movie-content {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content:center;
-}
-
-.movie-content > div {
-    margin:20px;
-}
-
-.btn-block{
-	width: 15%;
-	text-align: center;
-	margin-left: auto;
-	margin-right: auto;
-	color: #e4e0e0;
-}
-
-#content {
-	background-image: url("../static/image.jpg");
-	background-color: #181818;
-	font-family: 'Noto Sans JP', sans-serif;
-}
-
-#details {
-	margin-left: 50px;
-}
-
-.body-content {
-	position: relative;
-  	min-height: 100%;
-}
-
+/* Clean, non-overlapping footer */
 .footer {
-	color: #e4e0e0;
-	background-color: #e50914d1;
-	text-align:center;
-	position: fixed;
-	bottom: 0;
- 	width: 100%;
+    color: #e4e0e0;
+    background-color: #141414; /* Changed from bright red to dark grey */
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 40px; /* Pushes it below the movie details */
+    width: 100%;
+    border-top: 1px solid #333;
 }
 
-.social-icons {
-	margin-left: 15px;
+.footer p {
+    margin: 0;
+    font-size: 15px;
+    letter-spacing: 0.5px;
 }
 
-h1 {
-    font-family: 'Netflix Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    color: #e50914;
+/* New GitHub Button */
+.github-btn {
+    display: inline-block;
+    margin-top: 10px;
+    color: #fff;
+    background-color: #e50914; /* Uses your Netflix red accent */
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
     font-weight: bold;
-    margin-top: 30px;
-    text-shadow: #000000 0px 0px 13px;
- }
-
-.github-corner:hover .octo-arm {
-  	animation: octocat-wave 560ms ease-in-out;
+    transition: background-color 0.2s;
 }
 
-.fa-arrow-up {
-	font-size: 1.5em;
-	color: #ffffff;
-    background: #e50914;
-    padding: 10px;
-	border-radius: 50%;
-	float: right;
-    bottom: 25px;
-    position: relative;
-}
-
-.fa-arrow-up:hover {
-	cursor: pointer;
-}
-
-.app-title:hover {
-	cursor: pointer;
-}
-
-@keyframes octocat-wave {
-  0%,
-  100% {
-    transform: rotate(0)
-  }
-
-  20%,
-  60% {
-    transform: rotate(-25deg)
-  }
-
-  40%,
-  80% {
-    transform: rotate(10deg)
-  }
-}
-
-#autoComplete {
-  background-position: 98% ;
-}
-
-#name {
-	color: white;
-	padding: 1px;
-}
-
-h6 {
-    margin-bottom: 20px;  
-}
-
-@media only screen and (max-width: 650px) {
-    #mcontent {
-      display: block;
-    }
-    .poster-lg {
-      display: none;
-    }
-    #details {
-		margin-left: 30px;
-	}
-
-	#autoComplete {
-	  background-position: 97% ;
-	}
-	
-	svg[data-toggle=tooltip] {
-		width: 50px;
-		height: 50px;
-	}
-
-	.fa-arrow-up{
-		font-size: 1em;
-		color: #ffffff;
-		background: #e50914;
-		padding: 10px;
-		border-radius: 50%;
-		float: right;
-		bottom: 10px;
-		position: relative;
-	}
-}
-
-@media only screen and (max-width: 991px) {
-	.modal-body{
-		display: block;
-	}
-	.profile-pic {
-		margin-left: auto;
-		margin-right: auto;
-		display: block;
-		margin-bottom: 20px;
-	}
-}
-@media only screen and (min-width: 992px) {
-	.modal-body {
-		display: flex;
-	}
-}
-
-@media only screen and (min-width: 651px) {
-  .poster-sm {
-    display: none;
-   }
-
-	#mcontent {
-		display: flex;
-		flex-wrap: nowrap;
-	}
-
-}
-
-.poster{
-    -webkit-box-shadow: 0px 1px 15px 4px rgba(250,250,250,1);
-    -moz-box-shadow: 0px 1px 15px 4px rgba(250,250,250,1);
-    box-shadow: 0px 1px 15px 4px rgba(250,250,250,1);
-}
-
-.card:hover {
-	cursor: pointer;
-}
-
-.castcard:hover {
-    cursor: pointer;
-}
-
-.cast-img {
-	filter: brightness(100%);
-	-moz-transition: all 0.75s ease;
-    -webkit-transition: all 0.75s ease;
-	transition: all 0.75s ease;
-}
-
-
-.cast-img:hover {
-	filter: brightness(50%);
-	-moz-transition: all 0.75s ease;
-    -webkit-transition: all 0.75s ease;
-    transition: all 0.75s ease;
-}
-
-.fig {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	backdrop-filter: brightness(50%);
-	position: absolute;
-	bottom: 0px;
-	top: 0px;
-	right: 0px;
-	left: 0px;
-	opacity: 0;
-	-moz-transition: all 0.75s ease;
-    -webkit-transition: all 0.75s ease;
-    transition: all 0.75s ease;
-}
-
-.fig:hover {
-	opacity: 1;
-	backdrop-filter:br;
-	-moz-transition: all 0.75s ease;
-    -webkit-transition: all 0.75s ease;
-    transition: all 0.75s ease;
-}
-
-.card-btn {
-	border-radius: 20px;
-}
-
-.imghvr {
-	position: relative;
-}
-
-.table td {
-    border-color: white;
-    border-style:solid; 
-    border-width:1px;
-}
-
-.fail {
-	display: none;
-	color: white;
-}
-
-/* Professional loading overlay */
-.loading-overlay {
-	display: none;
-	position: fixed;
-	inset: 0;
-	z-index: 9999;
-	align-items: center;
-	justify-content: center;
-	background: rgba(10, 10, 10, 0.72);
-	backdrop-filter: blur(6px);
-	-webkit-backdrop-filter: blur(6px);
-}
-
-.loading-card {
-	background: linear-gradient(145deg, rgba(24, 24, 24, 0.98), rgba(32, 32, 32, 0.98));
-	border: 1px solid rgba(229, 9, 20, 0.35);
-	border-radius: 16px;
-	padding: 36px 48px;
-	text-align: center;
-	box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
-	min-width: 280px;
-	max-width: 90vw;
-	animation: loadingFadeIn 0.25s ease-out;
-}
-
-.loading-spinner {
-	width: 52px;
-	height: 52px;
-	margin: 0 auto 20px;
-	border: 4px solid rgba(255, 255, 255, 0.12);
-	border-top-color: #e50914;
-	border-radius: 50%;
-	animation: spin 0.85s linear infinite;
-}
-
-.loading-title {
-	color: #ffffff;
-	font-size: 1.15rem;
-	font-weight: 600;
-	margin: 0 0 8px;
-	letter-spacing: 0.02em;
-}
-
-.loading-subtitle {
-	color: rgba(255, 255, 255, 0.65);
-	font-size: 0.9rem;
-	margin: 0;
-}
-
-@keyframes spin {
-	0% { transform: rotate(0deg); }
-	100% { transform: rotate(360deg); }
-}
-
-@keyframes loadingFadeIn {
-	from {
-		opacity: 0;
-		transform: translateY(8px) scale(0.98);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0) scale(1);
-	}
+.github-btn:hover {
+    background-color: #b30000;
+    color: #fff;
+    text-decoration: none;
 }
