@@ -278,13 +278,54 @@ def get_all_movie_data():
     movie_reviews = get_reviews_with_sentiment(movie_id, imdb_id)
 
     # 5. Render HTML Output
+    # We pass `movie_id=movie_id` here so your frontend template can assign it to the trailer button
     rendered_html = render_template('recommend.html', title=original_title, poster=poster, overview=overview,
                                     vote_average=rating, vote_count=vote_count, release_date=release_date,
                                     runtime=runtime, status=status, genres=genres, movie_cards=movie_cards,
                                     reviews=movie_reviews, casts=casts, cast_details=cast_details,
-                                    developer_info=DEV_INFO)
+                                    developer_info=DEV_INFO, movie_id=movie_id)
 
     return jsonify({'status': 'success', 'html': rendered_html})
+
+# --- NEW TRAILER ENDPOINT ---
+@app.route('/api/trailer/<int:movie_id>', methods=['GET'])
+def get_trailer(movie_id):
+    if not TMDB_API_KEY:
+        return jsonify({"success": False, "message": "API key configuration error"}), 500
+
+    url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?api_key={TMDB_API_KEY}&language=en-US"
+    
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        results = data.get('results', [])
+
+        # Filter for YouTube only
+        yt_videos = [v for v in results if v.get('site') == 'YouTube']
+
+        if not yt_videos:
+            return jsonify({"success": False, "message": "Trailer unavailable for this movie."}), 404
+
+        # Sort by preference: Official Trailer > Trailer > Official Teaser > Teaser
+        def get_weight(video):
+            weight = 0
+            if video.get('type') == 'Trailer': weight += 3
+            elif video.get('type') == 'Teaser': weight += 1
+            if video.get('official'): weight += 1
+            return weight
+
+        yt_videos.sort(key=get_weight, reverse=True)
+        best_video = yt_videos[0]
+
+        return jsonify({
+            "success": True,
+            "youtube_key": best_video.get('key'),
+            "title": best_video.get('name')
+        })
+
+    except requests.RequestException:
+        return jsonify({"success": False, "message": "Failed to retrieve trailer data."}), 502
 
 if __name__ == '__main__':
     app.run(debug=True)
