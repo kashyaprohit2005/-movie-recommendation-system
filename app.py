@@ -332,17 +332,32 @@ def get_trailer(movie_id):
 # 1. Grab the API key safely
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 2. Configure the Model
+# 2. Configure the Model Dynamically (BULLETPROOF FIX)
+chat_model = None
 try:
     if GEMINI_API_KEY:
         genai.configure(api_key=GEMINI_API_KEY)
-        # BULLETPROOF FIX: Use 'gemini-pro' which is supported by EVERY version of the library
-        chat_model = genai.GenerativeModel('gemini-pro')
+        
+        # We ask Google's API exactly what models it supports right now
+        available_models = genai.list_models()
+        working_model_name = None
+        
+        # Loop through to find a valid text generation model
+        for m in available_models:
+            if 'generateContent' in m.supported_generation_methods:
+                working_model_name = m.name
+                # Prioritize a flash or pro model if available
+                if 'flash' in m.name or 'pro' in m.name:
+                    break
+                    
+        if working_model_name:
+            print(f"SUCCESS: Auto-connected to Gemini model -> {working_model_name}")
+            chat_model = genai.GenerativeModel(working_model_name)
+        else:
+            print("CRITICAL: No valid Gemini text generation models found for this API Key.")
     else:
-        chat_model = None
         print("Warning: GEMINI_API_KEY not found.")
 except Exception as init_err:
-    chat_model = None
     print(f"Failed to initialize Gemini Model. Error: {init_err}")
 
 # Route to load the standalone chat HTML page
@@ -353,9 +368,8 @@ def chat_page():
 # Route to handle the chat logic secretly in the background
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
-    # Check if the key is entirely missing
     if not chat_model:
-        return jsonify({"success": False, "message": "Chatbot offline. API key is missing."}), 500
+        return jsonify({"success": False, "message": "Chatbot offline. Failed to detect a valid AI model."}), 500
         
     data = request.get_json()
     user_message = data.get("message", "").strip()
@@ -364,7 +378,7 @@ def api_chat():
         return jsonify({"success": False, "message": "Please enter a message."}), 400
         
     try:
-        # BULLETPROOF PERSONA: Combine the instructions and user message so it works flawlessly on older servers
+        # PERSONA INJECTION: Guarantees it acts like a movie expert regardless of the server
         prompt = (
             "You are a cinematic expert and movie recommendation assistant. "
             "You must ONLY answer questions related to movies, TV shows, actors, directors, and the entertainment industry. "
@@ -373,7 +387,6 @@ def api_chat():
             f"User Question: {user_message}"
         )
         
-        # Ask Google Gemini the question
         response = chat_model.generate_content(prompt)
         return jsonify({"success": True, "reply": response.text})
     except Exception as e:
