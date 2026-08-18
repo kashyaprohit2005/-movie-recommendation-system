@@ -12,6 +12,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import bs4 as bs
 import pickle
 import requests
+import google.generativeai as genai  # <-- NEW: Imported Gemini library
 
 # Load Sentiment Analysis Model & Vectorizer (lazy, with fallback training)
 SENTIMENT_MODEL = None
@@ -326,6 +327,47 @@ def get_trailer(movie_id):
 
     except requests.RequestException:
         return jsonify({"success": False, "message": "Failed to retrieve trailer data."}), 502
+
+# ==========================================
+# NEW: ISOLATED CHATBOT ROUTES (Zero-Risk)
+# ==========================================
+
+# Configure Gemini API
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    chat_model = genai.GenerativeModel(
+        'gemini-1.5-flash',
+        system_instruction="You are a cinematic expert and movie recommendation assistant for a website. You must ONLY answer questions related to movies, TV shows, actors, directors, and the entertainment industry. Keep your answers concise and engaging. If a user asks about an unrelated topic, politely decline and steer the conversation back to movies."
+    )
+else:
+    chat_model = None
+    print("Warning: GEMINI_API_KEY not found. Chatbot functionality will be disabled.")
+
+# Route to load the standalone chat HTML page
+@app.route('/chat')
+def chat_page():
+    return render_template('chat.html')
+
+# Route to handle the chat logic secretly in the background
+@app.route('/api/chat', methods=['POST'])
+def api_chat():
+    if not chat_model:
+        return jsonify({"success": False, "message": "Chatbot is currently offline (Missing API Key)."}), 500
+        
+    data = request.get_json()
+    user_message = data.get("message", "").strip()
+    
+    if not user_message:
+        return jsonify({"success": False, "message": "Please enter a message."}), 400
+        
+    try:
+        # Send message to Gemini and get response
+        response = chat_model.generate_content(user_message)
+        return jsonify({"success": True, "reply": response.text})
+    except Exception as e:
+        print(f"Gemini API Error: {e}")
+        return jsonify({"success": False, "message": "I'm having trouble thinking right now. Please try again later!"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
