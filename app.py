@@ -12,7 +12,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import bs4 as bs
 import pickle
 import requests
-import google.generativeai as genai  # <-- NEW: Imported Gemini library
+import google.generativeai as genai  # <-- Gemini library
 
 # Load Sentiment Analysis Model & Vectorizer (lazy, with fallback training)
 SENTIMENT_MODEL = None
@@ -279,7 +279,6 @@ def get_all_movie_data():
     movie_reviews = get_reviews_with_sentiment(movie_id, imdb_id)
 
     # 5. Render HTML Output
-    # We pass `movie_id=movie_id` here so your frontend template can assign it to the trailer button
     rendered_html = render_template('recommend.html', title=original_title, poster=poster, overview=overview,
                                     vote_average=rating, vote_count=vote_count, release_date=release_date,
                                     runtime=runtime, status=status, genres=genres, movie_cards=movie_cards,
@@ -302,13 +301,11 @@ def get_trailer(movie_id):
         data = response.json()
         results = data.get('results', [])
 
-        # Filter for YouTube only
         yt_videos = [v for v in results if v.get('site') == 'YouTube']
 
         if not yt_videos:
             return jsonify({"success": False, "message": "Trailer unavailable for this movie."}), 404
 
-        # Sort by preference: Official Trailer > Trailer > Official Teaser > Teaser
         def get_weight(video):
             weight = 0
             if video.get('type') == 'Trailer': weight += 3
@@ -328,32 +325,43 @@ def get_trailer(movie_id):
     except requests.RequestException:
         return jsonify({"success": False, "message": "Failed to retrieve trailer data."}), 502
 
+
 # ==========================================
 # NEW: ISOLATED CHATBOT ROUTES (Zero-Risk)
 # ==========================================
 
-# Configure Gemini API
+# 1. Grab the API key safely
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    chat_model = genai.GenerativeModel(
-        'gemini-1.5-flash',
-        system_instruction="You are a cinematic expert and movie recommendation assistant for a website. You must ONLY answer questions related to movies, TV shows, actors, directors, and the entertainment industry. Keep your answers concise and engaging. If a user asks about an unrelated topic, politely decline and steer the conversation back to movies."
-    )
-else:
+
+# WARNING: If the terminal doesn't read the environment variable, you can UNCOMMENT the line below and paste your real key here temporarily to test it!
+# GEMINI_API_KEY = "PASTE_YOUR_ACTUAL_KEY_HERE"
+
+# 2. Configure the Model
+try:
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+        chat_model = genai.GenerativeModel(
+            'gemini-1.5-flash',
+            system_instruction="You are a cinematic expert and movie recommendation assistant for a website. You must ONLY answer questions related to movies, TV shows, actors, directors, and the entertainment industry. Keep your answers concise and engaging. If a user asks about an unrelated topic, politely decline and steer the conversation back to movies."
+        )
+    else:
+        chat_model = None
+        print("Warning: GEMINI_API_KEY not found.")
+except Exception as init_err:
     chat_model = None
-    print("Warning: GEMINI_API_KEY not found. Chatbot functionality will be disabled.")
+    print(f"Failed to initialize Gemini Model. Update your library: pip install --upgrade google-generativeai. Error: {init_err}")
 
 # Route to load the standalone chat HTML page
 @app.route('/chat')
 def chat_page():
     return render_template('chat.html')
 
-# Route to handle the chat logic secretly in the background
+# Route to handle the chat logic
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
+    # Check if the key is entirely missing
     if not chat_model:
-        return jsonify({"success": False, "message": "Chatbot is currently offline (Missing API Key)."}), 500
+        return jsonify({"success": False, "message": "Chatbot offline. Either the API key is missing, or the Gemini Python library needs to be upgraded."}), 500
         
     data = request.get_json()
     user_message = data.get("message", "").strip()
@@ -362,12 +370,14 @@ def api_chat():
         return jsonify({"success": False, "message": "Please enter a message."}), 400
         
     try:
-        # Send message to Gemini and get response
+        # Ask Google Gemini the question
         response = chat_model.generate_content(user_message)
         return jsonify({"success": True, "reply": response.text})
     except Exception as e:
-        print(f"Gemini API Error: {e}")
-        return jsonify({"success": False, "message": "I'm having trouble thinking right now. Please try again later!"}), 500
+        # THIS PRINTS THE EXACT ERROR TO THE SCREEN SO WE CAN FIX IT!
+        exact_error = str(e)
+        print(f"CRITICAL GEMINI ERROR: {exact_error}")
+        return jsonify({"success": False, "message": f"SYSTEM ERROR: {exact_error}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
