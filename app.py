@@ -332,29 +332,14 @@ def get_trailer(movie_id):
 # 1. Grab the API key safely
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 2. Configure the Model Dynamically (BULLETPROOF FIX)
+# 2. Configure the Model Dynamically (EXPLICIT FIX)
 chat_model = None
 try:
     if GEMINI_API_KEY:
         genai.configure(api_key=GEMINI_API_KEY)
-        
-        # We ask Google's API exactly what models it supports right now
-        available_models = genai.list_models()
-        working_model_name = None
-        
-        # Loop through to find a valid text generation model
-        for m in available_models:
-            if 'generateContent' in m.supported_generation_methods:
-                working_model_name = m.name
-                # Prioritize a flash or pro model if available
-                if 'flash' in m.name or 'pro' in m.name:
-                    break
-                    
-        if working_model_name:
-            print(f"SUCCESS: Auto-connected to Gemini model -> {working_model_name}")
-            chat_model = genai.GenerativeModel(working_model_name)
-        else:
-            print("CRITICAL: No valid Gemini text generation models found for this API Key.")
+        # We explicitly set the exact version Google requested in the error logs
+        chat_model = genai.GenerativeModel('gemini-3.6-flash')
+        print("SUCCESS: Connected to Gemini model -> gemini-3.6-flash")
     else:
         print("Warning: GEMINI_API_KEY not found.")
 except Exception as init_err:
