@@ -23,7 +23,7 @@
     var films = {{suggestions|tojson}};
   </script>
 
-  <!-- Clean, Professional Footer Styles -->
+  <!-- Clean, Professional Footer & Chat Button Styles -->
   <style>
     .footer {
       text-align: center;
@@ -53,6 +53,33 @@
       background-color: #b30000;
       color: #fff;
       text-decoration: none;
+    }
+
+    /* FLOATING CHATBOT BUTTON */
+    .chat-fab {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        width: 60px;
+        height: 60px;
+        background-color: #e50914;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 28px;
+        box-shadow: 0 4px 15px rgba(229, 9, 20, 0.5);
+        transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+        z-index: 9999;
+        text-decoration: none;
+    }
+    .chat-fab:hover {
+        transform: scale(1.1) rotate(5deg);
+        background-color: #b30000;
+        color: white;
+        text-decoration: none;
+        box-shadow: 0 6px 20px rgba(229, 9, 20, 0.7);
     }
   </style>
 
@@ -113,6 +140,11 @@
           <i class="fa fa-github"></i> GitHub Profile
       </a>
   </div>
+
+  <!-- FLOATING CHATBOT BUTTON -->
+  <a href="/chat" class="chat-fab" title="Talk to AI Expert">
+      <i class="fa fa-comments"></i>
+  </a>
   
   <script src="https://cdn.jsdelivr.net/npm/@tarekraafat/autocomplete.js@7.2.0/dist/js/autoComplete.min.js"></script>
   <script type="text/javascript" src="{{url_for('static', filename='autocomplete.js')}}"></script>
