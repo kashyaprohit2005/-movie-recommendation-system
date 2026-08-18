@@ -355,3 +355,33 @@ h6 {
 		transform: translateY(0) scale(1);
 	}
 }
+
+/* =========================================
+   FLOATING CHATBOT BUTTON
+   ========================================= */
+.chat-fab {
+    position: fixed;
+    bottom: 30px;
+    left: 30px; /* Placed on the left so it doesn't hit your scroll arrow */
+    width: 60px;
+    height: 60px;
+    background-color: #e50914;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    box-shadow: 0 4px 15px rgba(229, 9, 20, 0.5);
+    transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+    z-index: 9999;
+    text-decoration: none;
+}
+
+.chat-fab:hover {
+    transform: scale(1.1) rotate(5deg);
+    background-color: #b30000;
+    color: white;
+    text-decoration: none;
+    box-shadow: 0 6px 20px rgba(229, 9, 20, 0.7);
+}
