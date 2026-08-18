@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>NEW</title>
+    <title>NEW</title>
 
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-	<!-- Google Fonts -->
-	<link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans&display=swap" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
 
-	<!-- Font Awesome -->
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
-	<!-- Bootstrap -->
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
-	<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='style.css') }}">
+    <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='style.css') }}">
 
-    <!-- TRAILER MODAL STYLES ONLY -->
+    <!-- TRAILER MODAL, FOOTER, & CHAT BUTTON STYLES -->
     <style>
         .watch-trailer-btn {
             background: rgba(229, 9, 20, 0.9);
@@ -84,17 +84,75 @@
         }
         .trailer-error { color: #fff; text-align: center; padding: 40px 20px; display: none; font-size: 1.1rem;}
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Clean, Professional Footer Styles */
+        .footer {
+            text-align: center;
+            padding: 25px 20px;
+            color: #e4e0e0;
+            background-color: #141414;
+            border-top: 1px solid #333;
+            width: 100%;
+            margin-top: 40px;
+        }
+        .footer p {
+            margin: 0 0 10px 0;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+        }
+        .github-btn {
+            display: inline-block;
+            color: #fff;
+            background-color: #e50914;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .github-btn:hover {
+            background-color: #b30000;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        /* FLOATING CHATBOT BUTTON */
+        .chat-fab {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: #e50914;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.5);
+            transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+            z-index: 9999;
+            text-decoration: none;
+        }
+        .chat-fab:hover {
+            transform: scale(1.1) rotate(5deg);
+            background-color: #b30000;
+            color: white;
+            text-decoration: none;
+            box-shadow: 0 6px 20px rgba(229, 9, 20, 0.7);
+        }
     </style>
 
 </head>
 
 <body id="content">
-	<div class="results">
-	    <center>
-	      <h2 id="name" class="text-uppercase">{{title}}</h2>
-	    </center>
-	</div>
-	<br>
+    <div class="results">
+        <center>
+          <h2 id="name" class="text-uppercase">{{title}}</h2>
+        </center>
+    </div>
+    <br>
 
 <div id="mycontent">
     <div id="mcontent">
@@ -123,7 +181,7 @@
     </div>
 </div>
 <br/>
-	
+    
 {% for name, details in cast_details.items() if not cast_details.hidden %}
   <div class="modal fade" id="{{details[0]}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel3" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
@@ -141,8 +199,8 @@
             <p><strong>Birthday:</strong> {{details[2]}} </p>
             <p><strong>Place of Birth:</strong> {{details[3]}} </p>
             <p> 
-              <p><strong>Biography:</strong><p>
-              {{details[4]}}
+              <p><strong>Biography:</strong></p>
+              <p>{{details[4]}}</p>
             </p>
           </div>
         </div>
@@ -156,10 +214,10 @@
   
   {% if casts|length > 1 %}
   <div class="movie" style="color: #E8E8E8;">
-    	<center>
-		<h3>TOP CAST</h3>
-		<h5>(Click on the cast to know more)</h5>
-	</center>
+        <center>
+        <h3>TOP CAST</h3>
+        <h5>(Click on the cast to know more)</h5>
+    </center>
   </div>
 
   <div class="movie-content">
@@ -193,22 +251,22 @@
             </thead>
     
             <tbody>
-		      {% for review, status in reviews.items() if not reviews.hidden %}
-		      <tr style="background-color:#e5091485;">
-              	  <td>{{review}}</td>
-	              <td><center>
-	                  {{status}} : 
-	                  {% if status =='Good' %}
-	                    &#128515;
-	                  {% else %}
-	                    &#128534;
-	                  {% endif %}
-	                </center>
-	              </td>
-          		</tr>
-      			{% endfor %}
-    		</tbody>
-		 </table>
+              {% for review, status in reviews.items() if not reviews.hidden %}
+              <tr style="background-color:#e5091485;">
+                  <td>{{review}}</td>
+                  <td><center>
+                      {{status}} : 
+                      {% if status =='Good' %}
+                        &#128515;
+                      {% else %}
+                        &#128534;
+                      {% endif %}
+                    </center>
+                  </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+         </table>
     </div>
     {% else %}
     <div style="color:white;">
@@ -241,6 +299,19 @@
     </div>
 
     {% endif %}
+
+  <!-- Updated Professional Footer -->
+  <div class="footer">
+      <p>{{ developer_info }}</p>
+      <a href="https://github.com/kashyaprohit2005" target="_blank" class="github-btn">
+          <i class="fa fa-github"></i> GitHub Profile
+      </a>
+  </div>
+
+  <!-- FLOATING CHATBOT BUTTON -->
+  <a href="/chat" class="chat-fab" title="Talk to AI Expert">
+      <i class="fa fa-comments"></i>
+  </a>
 
   <!-- TRAILER MODAL HTML -->
   <div id="trailerModal" class="trailer-modal">
