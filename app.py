@@ -41,7 +41,7 @@ def analyze_sentiment(review_text):
     return 'Good' if pred[0] == 1 else 'Bad'
 
 # TMDB API Key (set TMDB_API_KEY in Render environment variables)
-TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "your api key here")
+TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "1e9a8541b13e1d9dff9ac2bda6d982e5")
 
 DATA = None
 COUNT_MATRIX = None
