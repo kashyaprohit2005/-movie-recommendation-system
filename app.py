@@ -41,8 +41,15 @@ def analyze_sentiment(review_text):
     return 'Good' if pred[0] == 1 else 'Bad'
 
 # TMDB API Key (set TMDB_API_KEY in Render environment variables)
-TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "1e9a8541b13e1d9dff9ac2bda6d982e5")
+import os
+from dotenv import load_dotenv
 
+# This tells Python to read the .env file you just created
+load_dotenv() 
+
+# Now this will safely pull the key from the file instead of being hardcoded
+TMDB_API_KEY = os.environ.get("TMDB_API_KEY")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 DATA = None
 COUNT_MATRIX = None
 
