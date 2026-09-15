@@ -346,12 +346,12 @@ def api_chat():
         
         clean_key = GEMINI_API_KEY.strip()
         
-        # 1. CLEAN URL (No ?key= attached)
-        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+        # FIX: Upgraded to a current model (3.7-flash) that natively supports AQ. keys
+        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent"
         
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
         
-        # 2. PROPER HEADERS (Authentication passed via x-goog-api-key)
+        # Authentication safely passed in the headers
         headers = {
             "Content-Type": "application/json",
             "x-goog-api-key": clean_key
