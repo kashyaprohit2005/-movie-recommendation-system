@@ -344,13 +344,18 @@ def api_chat():
             f"User Question: {user_message}"
         )
         
-        # 1. Strip the key in case invisible newline characters accidentally broke authentication
         clean_key = GEMINI_API_KEY.strip()
         
-        # 2. Call the native Gemini endpoint with the 'AQ.' key directly through the query param
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={clean_key}"
+        # 1. CLEAN URL (No ?key= attached)
+        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+        
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
-        headers = {"Content-Type": "application/json"}
+        
+        # 2. PROPER HEADERS (Authentication passed via x-goog-api-key)
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": clean_key
+        }
         
         response = requests.post(url, json=payload, headers=headers)
         response_data = response.json()
