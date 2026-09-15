@@ -39,12 +39,14 @@ def analyze_sentiment(review_text):
     pred = clf.predict(vector)
     return 'Good' if pred[0] == 1 else 'Bad'
 
+
 # ==========================================
 # HARDCODED API KEYS (For immediate demo use)
 # ==========================================
 TMDB_API_KEY = "1e9a8541b13e1d9dff9ac2bda6d982e5"
 GEMINI_API_KEY = "AQ.Ab8RN6JyKoaqDzL2EDw09PVFabnQVAFb6Kx0eF4dl6rojFW3IA"
 # ==========================================
+
 
 DATA = None
 COUNT_MATRIX = None
@@ -63,7 +65,6 @@ def rcmd(m):
     m = str(m).lower().strip()
     data, count_matrix = get_data_and_matrix()
     
-    # Exact or substring match in dataset
     match = data.loc[data['movie_title'] == m]
     if match.empty:
         match = data[data['movie_title'].str.contains(m, case=False, regex=False, na=False)]
@@ -109,7 +110,6 @@ def fetch_person_bio(cast_id):
         return {'bdy': 'N/A', 'bio': 'N/A', 'place': 'N/A'}
 
 def fetch_tmdb_reviews(movie_id, limit=8):
-    """Fetch user reviews from TMDB API."""
     reviews = []
     try:
         url = f"https://api.themoviedb.org/3/movie/{movie_id}/reviews"
@@ -124,7 +124,6 @@ def fetch_tmdb_reviews(movie_id, limit=8):
     return reviews
 
 def fetch_imdb_reviews(imdb_id, limit=8):
-    """Fallback: scrape IMDb reviews when TMDB has none."""
     reviews = []
     if not imdb_id or imdb_id == 'N/A':
         return reviews
@@ -160,7 +159,6 @@ def fetch_imdb_reviews(imdb_id, limit=8):
     return reviews[:limit]
 
 def get_reviews_with_sentiment(movie_id, imdb_id):
-    """Fetch reviews and run sentiment analysis on each."""
     reviews_list = fetch_tmdb_reviews(movie_id)
     if not reviews_list:
         reviews_list = fetch_imdb_reviews(imdb_id)
@@ -193,7 +191,6 @@ def get_all_movie_data():
 
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
     
-    # 1. Search Movie on TMDB using URL params
     search_url = "https://api.themoviedb.org/3/search/movie"
     target_movie = None
     try:
@@ -203,18 +200,15 @@ def get_all_movie_data():
     except Exception as e:
         print("TMDB Search Error:", str(e))
 
-    # 2. Movie Similarity Calculation
     search_title = target_movie.get('title') if target_movie else movie_title_input
     rec_movies = rcmd(search_title)
     if not rec_movies:
         rec_movies = rcmd(movie_title_input)
     
-    # If still not found, fallback to top 10 from dataset
     if not rec_movies:
         data, _ = get_data_and_matrix()
         rec_movies = list(data['movie_title'].head(10))
 
-    # If TMDB search didn't find the exact movie, attempt search with the first recommended title
     if not target_movie:
         try:
             fallback_res = requests.get(search_url, params={'api_key': TMDB_API_KEY, 'query': rec_movies[0]}, headers=headers, timeout=5).json()
@@ -229,7 +223,6 @@ def get_all_movie_data():
     movie_id = target_movie['id']
     original_title = target_movie.get('title') or target_movie.get('original_title')
 
-    # 3. Parallel fetch: Movie Details, Credits, and 10 Recommended Posters
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         future_details = executor.submit(lambda: requests.get(f"https://api.themoviedb.org/3/movie/{movie_id}", params={'api_key': TMDB_API_KEY}, headers=headers, timeout=4).json())
         future_credits = executor.submit(lambda: requests.get(f"https://api.themoviedb.org/3/movie/{movie_id}/credits", params={'api_key': TMDB_API_KEY}, headers=headers, timeout=4).json())
@@ -239,7 +232,6 @@ def get_all_movie_data():
         movie_credits = future_credits.result()
         rec_posters = [f.result() for f in poster_futures]
 
-    # Process Movie Info
     imdb_id = movie_details.get('imdb_id', 'N/A')
     poster = f"https://image.tmdb.org/t/p/original{movie_details.get('poster_path')}" if movie_details.get('poster_path') else "/static/movie_placeholder.jpeg"
     overview = movie_details.get('overview', '')
@@ -257,7 +249,6 @@ def get_all_movie_data():
         runtime = f"{runtime_min // 60} hour(s) {runtime_min % 60} min(s)"
     status = movie_details.get('status', 'Released')
 
-    # Process Cast
     raw_cast = movie_credits.get('cast', [])[:8]
     cast_names, cast_chars, cast_profiles, cast_ids = [], [], [], []
     for c in raw_cast:
@@ -266,7 +257,6 @@ def get_all_movie_data():
         cast_chars.append(c['character'])
         cast_profiles.append(f"https://image.tmdb.org/t/p/original{c['profile_path']}" if c.get('profile_path') else "/static/default.jpg")
 
-    # Fetch Person Bios in Parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
         bio_results = list(executor.map(fetch_person_bio, cast_ids))
 
@@ -278,10 +268,8 @@ def get_all_movie_data():
     casts = {cast_names[i]: [cast_ids[i], cast_chars[i], cast_profiles[i]] for i in range(len(cast_profiles))}
     cast_details = {cast_names[i]: [cast_ids[i], cast_profiles[i], cast_bdys[i], cast_places[i], cast_bios[i]] for i in range(len(cast_places))}
 
-    # 4. Fetch reviews and run sentiment analysis
     movie_reviews = get_reviews_with_sentiment(movie_id, imdb_id)
 
-    # 5. Render HTML Output
     rendered_html = render_template('recommend.html', title=original_title, poster=poster, overview=overview,
                                     vote_average=rating, vote_count=vote_count, release_date=release_date,
                                     runtime=runtime, status=status, genres=genres, movie_cards=movie_cards,
@@ -290,7 +278,6 @@ def get_all_movie_data():
 
     return jsonify({'status': 'success', 'html': rendered_html})
 
-# --- NEW TRAILER ENDPOINT ---
 @app.route('/api/trailer/<int:movie_id>', methods=['GET'])
 def get_trailer(movie_id):
     if not TMDB_API_KEY:
@@ -329,15 +316,17 @@ def get_trailer(movie_id):
         return jsonify({"success": False, "message": "Failed to retrieve trailer data."}), 502
 
 
-# Route to load the standalone chat HTML page
+# ==========================================
+# ISOLATED CHATBOT ROUTES (Direct REST API)
+# ==========================================
+
 @app.route('/chat')
 def chat_page():
     return render_template('chat.html')
 
-# Route to handle the chat logic directly calling Google's REST API
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
-    if not GEMINI_API_KEY or GEMINI_API_KEY == "1e9a8541b13e1d9dff9ac2bda6d982e5":
+    if not GEMINI_API_KEY or "YOUR_GEMINI" in GEMINI_API_KEY:
         return jsonify({"success": False, "message": "Chatbot offline. Invalid API Key."}), 500
         
     data = request.get_json()
@@ -347,7 +336,6 @@ def api_chat():
         return jsonify({"success": False, "message": "Please enter a message."}), 400
         
     try:
-        # PERSONA INJECTION
         prompt = (
             "You are a cinematic expert and movie recommendation assistant. "
             "You must ONLY answer questions related to movies, TV shows, actors, directors, and the entertainment industry. "
@@ -356,19 +344,20 @@ def api_chat():
             f"User Question: {user_message}"
         )
         
-        # Bypass the broken SDK and call Google's API directly
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        # 1. Strip the key in case invisible newline characters accidentally broke authentication
+        clean_key = GEMINI_API_KEY.strip()
+        
+        # 2. Call the native Gemini endpoint with the 'AQ.' key directly through the query param
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={clean_key}"
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
         headers = {"Content-Type": "application/json"}
         
         response = requests.post(url, json=payload, headers=headers)
         response_data = response.json()
         
-        # Catch any other Google errors cleanly
         if response.status_code != 200:
             return jsonify({"success": False, "message": f"API Error: {response_data.get('error', {}).get('message', 'Unknown Error')}"}), 500
             
-        # Parse the reply
         reply = response_data["candidates"][0]["content"]["parts"][0]["text"]
         return jsonify({"success": True, "reply": reply})
         
