@@ -12,7 +12,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 import bs4 as bs
 import pickle
 import requests
-import google.generativeai as genai  # <-- Gemini library
 
 # Load Sentiment Analysis Model & Vectorizer (lazy, with fallback training)
 SENTIMENT_MODEL = None
@@ -40,14 +39,12 @@ def analyze_sentiment(review_text):
     pred = clf.predict(vector)
     return 'Good' if pred[0] == 1 else 'Bad'
 
-
 # ==========================================
 # HARDCODED API KEYS (For immediate demo use)
 # ==========================================
 TMDB_API_KEY = "1e9a8541b13e1d9dff9ac2bda6d982e5"
 GEMINI_API_KEY = "AQ.Ab8RN6JyKoaqDzL2EDw09PVFabnQVAFb6Kx0eF4dl6rojFW3IA"
 # ==========================================
-
 
 DATA = None
 COUNT_MATRIX = None
@@ -112,7 +109,7 @@ def fetch_person_bio(cast_id):
         return {'bdy': 'N/A', 'bio': 'N/A', 'place': 'N/A'}
 
 def fetch_tmdb_reviews(movie_id, limit=8):
-    """Fetch user reviews from TMDB API (reliable on cloud hosts)."""
+    """Fetch user reviews from TMDB API."""
     reviews = []
     try:
         url = f"https://api.themoviedb.org/3/movie/{movie_id}/reviews"
@@ -331,33 +328,17 @@ def get_trailer(movie_id):
     except requests.RequestException:
         return jsonify({"success": False, "message": "Failed to retrieve trailer data."}), 502
 
-# ==========================================
-# NEW: ISOLATED CHATBOT ROUTES (Zero-Risk)
-# ==========================================
-
-# 2. Configure the Model Dynamically (EXPLICIT FIX)
-chat_model = None
-try:
-    if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
-        genai.configure(api_key=GEMINI_API_KEY)
-        # We explicitly set the exact version Google requested in the error logs
-        chat_model = genai.GenerativeModel('gemini-1.5-flash') # Changed to 1.5-flash as 3.6 does not exist
-        print("SUCCESS: Connected to Gemini model")
-    else:
-        print("Warning: Valid GEMINI_API_KEY not found.")
-except Exception as init_err:
-    print(f"Failed to initialize Gemini Model. Error: {init_err}")
 
 # Route to load the standalone chat HTML page
 @app.route('/chat')
 def chat_page():
     return render_template('chat.html')
 
-# Route to handle the chat logic secretly in the background
+# Route to handle the chat logic directly calling Google's REST API
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
-    if not chat_model:
-        return jsonify({"success": False, "message": "Chatbot offline. Failed to detect a valid AI model."}), 500
+    if not GEMINI_API_KEY or GEMINI_API_KEY == "1e9a8541b13e1d9dff9ac2bda6d982e5":
+        return jsonify({"success": False, "message": "Chatbot offline. Invalid API Key."}), 500
         
     data = request.get_json()
     user_message = data.get("message", "").strip()
@@ -366,7 +347,7 @@ def api_chat():
         return jsonify({"success": False, "message": "Please enter a message."}), 400
         
     try:
-        # PERSONA INJECTION: Guarantees it acts like a movie expert regardless of the server
+        # PERSONA INJECTION
         prompt = (
             "You are a cinematic expert and movie recommendation assistant. "
             "You must ONLY answer questions related to movies, TV shows, actors, directors, and the entertainment industry. "
@@ -375,8 +356,22 @@ def api_chat():
             f"User Question: {user_message}"
         )
         
-        response = chat_model.generate_content(prompt)
-        return jsonify({"success": True, "reply": response.text})
+        # Bypass the broken SDK and call Google's API directly
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        payload = {"contents": [{"parts": [{"text": prompt}]}]}
+        headers = {"Content-Type": "application/json"}
+        
+        response = requests.post(url, json=payload, headers=headers)
+        response_data = response.json()
+        
+        # Catch any other Google errors cleanly
+        if response.status_code != 200:
+            return jsonify({"success": False, "message": f"API Error: {response_data.get('error', {}).get('message', 'Unknown Error')}"}), 500
+            
+        # Parse the reply
+        reply = response_data["candidates"][0]["content"]["parts"][0]["text"]
+        return jsonify({"success": True, "reply": reply})
+        
     except Exception as e:
         exact_error = str(e)
         print(f"CRITICAL GEMINI ERROR: {exact_error}")
