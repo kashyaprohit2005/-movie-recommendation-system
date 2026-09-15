@@ -45,7 +45,7 @@ def analyze_sentiment(review_text):
 # HARDCODED API KEYS (For immediate demo use)
 # ==========================================
 TMDB_API_KEY = "1e9a8541b13e1d9dff9ac2bda6d982e5"
-GEMINI_API_KEY = "1e9a8541b13e1d9dff9ac2bda6d982e5" # <-- PASTE YOUR GEMINI KEY HERE
+GEMINI_API_KEY = "AQ.Ab8RN6JyKoaqDzL2EDw09PVFabnQVAFb6Kx0eF4dl6rojFW3IA"
 # ==========================================
 
 
