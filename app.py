@@ -40,16 +40,15 @@ def analyze_sentiment(review_text):
     pred = clf.predict(vector)
     return 'Good' if pred[0] == 1 else 'Bad'
 
-# TMDB API Key (set TMDB_API_KEY in Render environment variables)
-import os
-from dotenv import load_dotenv
 
-# This tells Python to read the .env file you just created
-load_dotenv() 
+# ==========================================
+# HARDCODED API KEYS (For immediate demo use)
+# ==========================================
+TMDB_API_KEY = "1e9a8541b13e1d9dff9ac2bda6d982e5"
+GEMINI_API_KEY = "1e9a8541b13e1d9dff9ac2bda6d982e5" # <-- PASTE YOUR GEMINI KEY HERE
+# ==========================================
 
-# Now this will safely pull the key from the file instead of being hardcoded
-TMDB_API_KEY = os.environ.get("TMDB_API_KEY")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
 DATA = None
 COUNT_MATRIX = None
 
@@ -336,19 +335,16 @@ def get_trailer(movie_id):
 # NEW: ISOLATED CHATBOT ROUTES (Zero-Risk)
 # ==========================================
 
-# 1. Grab the API key safely
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-
 # 2. Configure the Model Dynamically (EXPLICIT FIX)
 chat_model = None
 try:
-    if GEMINI_API_KEY:
+    if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
         genai.configure(api_key=GEMINI_API_KEY)
         # We explicitly set the exact version Google requested in the error logs
-        chat_model = genai.GenerativeModel('gemini-3.6-flash')
-        print("SUCCESS: Connected to Gemini model -> gemini-3.6-flash")
+        chat_model = genai.GenerativeModel('gemini-1.5-flash') # Changed to 1.5-flash as 3.6 does not exist
+        print("SUCCESS: Connected to Gemini model")
     else:
-        print("Warning: GEMINI_API_KEY not found.")
+        print("Warning: Valid GEMINI_API_KEY not found.")
 except Exception as init_err:
     print(f"Failed to initialize Gemini Model. Error: {init_err}")
 
